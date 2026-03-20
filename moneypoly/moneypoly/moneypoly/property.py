@@ -52,11 +52,17 @@ class Property:
         Lift the mortgage on this property.
         Returns the cost (110 % of mortgage value), or 0 if not mortgaged.
         """
-        if not self.is_mortgaged:
+        cost = self.unmortgage_cost()
+        if cost == 0:
             return 0
-        cost = int(self.mortgage_value * 1.1)
         self.is_mortgaged = False
         return cost
+
+    def unmortgage_cost(self):
+        """Return the amount needed to clear the current mortgage."""
+        if not self.is_mortgaged:
+            return 0
+        return int(self.mortgage_value * 1.1)
 
     def is_available(self):
         """Return True if this property can be purchased (unowned, not mortgaged)."""
