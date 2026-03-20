@@ -456,7 +456,10 @@ class Game:
             elif choice == 6:
                 amount = ui.safe_int_input("  Loan amount: ", default=0)
                 if amount > 0:
-                    self.bank.give_loan(player, amount)
+                    try:
+                        self.bank.give_loan(player, amount)
+                    except ValueError as error:
+                        print(f"  Bank could not issue that loan: {error}")
 
     def _menu_mortgage(self, player):
         """Interactively select a property to mortgage."""

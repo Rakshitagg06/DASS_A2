@@ -628,6 +628,26 @@ def test_interactive_menu_skips_non_positive_loan_requests(monkeypatch):
     assert called == []
 
 
+def test_interactive_menu_handles_unaffordable_emergency_loans(monkeypatch, capsys):
+    """Oversized emergency loans should be rejected without crashing the menu."""
+    game = Game(["Alice", "Bob"])
+    player = game.players[0]
+    starting_player_balance = player.balance
+    starting_bank_balance = game.bank.get_balance()
+    choices = iter([6, starting_bank_balance + 1, 0])
+    monkeypatch.setattr(
+        "moneypoly.ui.safe_int_input",
+        lambda _prompt, default=0: next(choices),
+    )
+
+    game.interactive_menu(player)
+
+    output = capsys.readouterr().out
+    assert "could not issue that loan" in output
+    assert player.balance == starting_player_balance
+    assert game.bank.get_balance() == starting_bank_balance
+
+
 def test_interactive_menu_ignores_invalid_choices_and_loops(monkeypatch):
     """Unknown menu choices should be ignored and the menu should keep running."""
     game = Game(["Alice", "Bob"])
