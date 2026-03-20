@@ -13,11 +13,11 @@ def get_player_names():
 
 def main():
     """Start an interactive MoneyPoly session."""
-    names = get_player_names()
     try:
+        names = get_player_names()
         game = Game(names)
         game.run()
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, EOFError):
         print("\n\n  Game interrupted. Goodbye!")
     except ValueError as exc:
         print(f"Setup error: {exc}")

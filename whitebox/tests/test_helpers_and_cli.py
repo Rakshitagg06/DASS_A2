@@ -295,6 +295,16 @@ def test_main_handles_keyboard_interrupt(monkeypatch, capsys):
     assert "Game interrupted" in capsys.readouterr().out
 
 
+def test_main_handles_eof_during_initial_player_input(monkeypatch, capsys):
+    """The CLI should exit cleanly when stdin closes at startup."""
+    entry = import_module("main")
+    monkeypatch.setattr("builtins.input", lambda _prompt: (_ for _ in ()).throw(EOFError))
+
+    entry.main()
+
+    assert "Game interrupted" in capsys.readouterr().out
+
+
 def test_main_handles_setup_value_errors(monkeypatch, capsys):
     """The CLI should surface setup errors without a traceback."""
     entry = import_module("main")
