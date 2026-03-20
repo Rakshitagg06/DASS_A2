@@ -61,3 +61,33 @@ def test_start_race_requires_at_least_one_entry(state):
         assert "at least one entry" in str(error)
     else:
         raise AssertionError("Expected empty race to fail on start.")
+
+
+def test_race_actions_require_the_schedule_entry_to_exist(state):
+    """Race operations should fail cleanly if the schedule record is missing."""
+
+    registration.register_member(state, "Mia", "Driver")
+    inventory.add_car(state, "Velocity")
+    race_management.create_race(
+        state, "neon-nights", "Industrial Strip", "Friday 22:00", 1200
+    )
+
+    state.schedule.pop("neon-nights")
+    try:
+        race_management.enter_race(state, "neon-nights", "Mia", "Velocity")
+    except StreetRaceError as error:
+        assert "missing its schedule entry" in str(error)
+    else:
+        raise AssertionError("Expected a missing race schedule to block entry.")
+
+    race_management.create_race(
+        state, "dock-rush", "Harbor", "Saturday 00:00", 500
+    )
+    race_management.enter_race(state, "dock-rush", "Mia", "Velocity")
+    state.schedule.pop("dock-rush")
+    try:
+        race_management.start_race(state, "dock-rush")
+    except StreetRaceError as error:
+        assert "missing its schedule entry" in str(error)
+    else:
+        raise AssertionError("Expected a missing race schedule to block race start.")

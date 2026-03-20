@@ -25,6 +25,15 @@ def _require_race(state: StreetRaceState, race_id: str) -> Race:
         raise StreetRaceError(f"Race {normalized_id} does not exist.") from error
 
 
+def _require_race_schedule_slot(state: StreetRaceState, race: Race) -> str:
+    """Return the race slot from the schedule or raise a domain error."""
+
+    event = state.schedule.get(race.race_id)
+    if event is None:
+        raise StreetRaceError(f"Race {race.race_id} is missing its schedule entry.")
+    return event.slot
+
+
 def create_race(
     state: StreetRaceState, race_id: str, location: str, slot: str, prize_money: int
 ) -> Race:
@@ -64,10 +73,10 @@ def enter_race(
         raise StreetRaceError(f"{driver.name} is already entered in race {race.race_id}.")
     if any(entry.car_name == car.name for entry in race.entries):
         raise StreetRaceError(f"{car.name} is already entered in race {race.race_id}.")
-    event = state.schedule[race.race_id]
+    event_slot = _require_race_schedule_slot(state, race)
     scheduling.ensure_no_conflict(
         state,
-        event.slot,
+        event_slot,
         participants=[driver.name],
         cars=[car.name],
         ignore_event_id=race.race_id,
@@ -86,6 +95,7 @@ def start_race(state: StreetRaceState, race_id: str) -> Race:
         raise StreetRaceError(f"Race {race.race_id} cannot be started from {race.status}.")
     if not race.entries:
         raise StreetRaceError("A race needs at least one entry before it can start.")
+    _require_race_schedule_slot(state, race)
     for entry in race.entries:
         driver = registration.require_registered_member(state, entry.driver_name)
         if "driver" not in driver.roles:
