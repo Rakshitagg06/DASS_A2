@@ -14,7 +14,7 @@ def test_bankruptcy_does_not_skip_the_next_player(monkeypatch):
     game.dice.doubles_streak = 0
 
     def bankrupt_current_player(player, _roll):
-        player.balance = 0
+        player.balance = -1
         game._check_bankruptcy(player)
 
     monkeypatch.setattr(game, "_move_and_resolve", bankrupt_current_player)
