@@ -345,6 +345,44 @@ def test_repaired_car_can_complete_a_later_delivery_mission_for_extra_reward(sta
     assert state.cars["Velocity"].condition == "ready"
 
 
+def test_repaired_car_and_driver_can_reenter_a_later_race_and_stack_rewards(state):
+    """A repaired race setup should remain reusable for a later race workflow."""
+
+    registration.register_member(state, "Mia", "Driver")
+    registration.register_member(state, "Nova", "Mechanic")
+    inventory.add_car(state, "Velocity")
+    inventory.add_spare_part(state, "belt", 2)
+    inventory.add_tool(state, "wrench", 1)
+    inventory.update_cash_balance(state, 1000)
+    race_management.create_race(
+        state, "neon-nights", "Industrial Strip", "Friday 22:00", 1200
+    )
+    race_management.enter_race(state, "neon-nights", "Mia", "Velocity")
+    race_management.start_race(state, "neon-nights")
+    results.record_race_result(
+        state,
+        "neon-nights",
+        ["Mia"],
+        damage_reports={"Velocity": "minor"},
+        repair_slot="Friday 23:30",
+        auto_schedule_repairs=True,
+    )
+    mission_planning.start_mission(state, "repair-neon-nights-velocity")
+    maintenance.complete_repair(state, "repair-neon-nights-velocity")
+
+    race_management.create_race(
+        state, "harbor-sprint", "Harbor District", "Saturday 01:00", 700
+    )
+    race_management.enter_race(state, "harbor-sprint", "Mia", "Velocity")
+    race_management.start_race(state, "harbor-sprint")
+    results.record_race_result(state, "harbor-sprint", ["Mia"])
+
+    assert state.races["harbor-sprint"].status == "completed"
+    assert state.cash_balance == 2700
+    assert results.get_rankings(state)[0] == ("Mia", 10)
+    assert state.cars["Velocity"].condition == "ready"
+
+
 def test_missions_cannot_start_if_required_roles_are_unavailable(state):
     """A second mission in the same slot should fail when the driver is busy."""
 
