@@ -121,6 +121,13 @@ def test_inventory_module_covers_validation_branches(state):
     assert_error("Car name is required.", inventory.require_car, state, "   ")
     assert_error("Ghost is not in the inventory.", inventory.require_car, state, "Ghost")
     assert_error(
+        "Spare part name is required.",
+        inventory.add_spare_part,
+        state,
+        "   ",
+        1,
+    )
+    assert_error(
         "Spare part quantity must be positive.",
         inventory.add_spare_part,
         state,
@@ -221,6 +228,13 @@ def test_scheduling_module_validates_inputs_and_missing_events(state):
         state,
         "Mia",
         "unknown-event",
+    )
+    assert_error(
+        "Event identifier is required.",
+        scheduling.assign_member_to_event,
+        state,
+        "Mia",
+        "   ",
     )
     assert_error(
         "Scheduled event unknown-event does not exist.",
@@ -332,6 +346,25 @@ def test_race_management_validates_race_state_before_start_and_entry(state):
     )
 
 
+def test_race_management_rechecks_driver_roles_before_start(state):
+    """Race start should fail if an entered member no longer has the driver role."""
+
+    registration.register_member(state, "Mia", "Driver")
+    inventory.add_car(state, "Velocity")
+    race_management.create_race(
+        state, "neon-nights", "Industrial Strip", "Friday 22:00", 1200
+    )
+    race_management.enter_race(state, "neon-nights", "Mia", "Velocity")
+
+    state.crew_members["Mia"].roles.remove("driver")
+    assert_error(
+        "Mia does not have the driver role.",
+        race_management.start_race,
+        state,
+        "neon-nights",
+    )
+
+
 def test_results_module_validates_missing_and_inactive_races(state):
     """Results should reject blank, unknown, and inactive race submissions."""
 
@@ -420,6 +453,12 @@ def test_results_module_covers_zero_prize_branch_and_sorted_rankings(state):
 def test_mission_planning_validates_setup_and_start_requirements(state):
     """Mission planning should reject invalid setup and broken start preconditions."""
 
+    assert_error(
+        "Mission identifier is required.",
+        mission_planning.require_mission,
+        state,
+        "   ",
+    )
     assert_error(
         "Mission ghost-mission does not exist.",
         mission_planning.require_mission,
@@ -556,6 +595,29 @@ def test_mission_planning_start_and_completion_cover_remaining_branches(state):
         state,
         "repair-night-2",
     )
+
+
+def test_mission_planning_covers_non_planned_and_zero_reward_completion(state):
+    """Mission flows should cover repeated starts and no-car zero-reward completion."""
+
+    registration.register_member(state, "Mia", "Driver")
+    mission_planning.plan_mission(
+        state, "quiet-run", "delivery", ["driver"], "Sunday 01:00", reward=0
+    )
+
+    mission_planning.start_mission(state, "quiet-run")
+    assert_error(
+        "Mission quiet-run cannot be started from active.",
+        mission_planning.start_mission,
+        state,
+        "quiet-run",
+    )
+
+    completed = mission_planning.complete_mission(state, "quiet-run")
+
+    assert completed.status == "completed"
+    assert completed.car_name is None
+    assert state.cash_balance == 0
 
 
 def test_maintenance_module_validates_assessment_and_repair_planning(state):
