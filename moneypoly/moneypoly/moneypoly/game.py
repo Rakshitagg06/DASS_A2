@@ -162,6 +162,7 @@ class Game:
 
         rent = prop.get_rent()
         player.deduct_money(rent)
+        prop.owner.add_money(rent)
         print(f"  {player.name} paid ${rent} rent on {prop.name} to {prop.owner.name}.")
 
     def mortgage_property(self, player, prop):
@@ -204,11 +205,15 @@ class Game:
         if prop.owner != seller:
             print(f"  Trade failed: {seller.name} does not own {prop.name}.")
             return False
+        if cash_amount < 0:
+            print("  Trade failed: sale price cannot be negative.")
+            return False
         if buyer.balance < cash_amount:
             print(f"  Trade failed: {buyer.name} cannot afford ${cash_amount}.")
             return False
 
         buyer.deduct_money(cash_amount)
+        seller.add_money(cash_amount)
         prop.owner = buyer
         seller.remove_property(prop)
         buyer.add_property(prop)
