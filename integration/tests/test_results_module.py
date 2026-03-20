@@ -95,3 +95,62 @@ def test_record_race_result_rolls_back_if_auto_repair_planning_fails(state):
     assert state.rankings["Mia"] == 0
     assert state.cars["Velocity"].condition == "ready"
     assert state.missions == {}
+
+
+def test_record_race_result_can_schedule_repairs_for_multiple_damaged_cars(state):
+    """Multiple damage reports should create a repair mission for each affected car."""
+
+    registration.register_member(state, "Mia", "Driver")
+    registration.register_member(state, "Leo", "Driver")
+    registration.register_member(state, "Nova", "Mechanic")
+    registration.register_member(state, "Rin", "Mechanic")
+    inventory.add_car(state, "Velocity")
+    inventory.add_car(state, "Shadow")
+    inventory.add_spare_part(state, "belt", 2)
+    inventory.add_tool(state, "wrench", 1)
+    race_management.create_race(
+        state, "neon-nights", "Industrial Strip", "Friday 22:00", 1200
+    )
+    race_management.enter_race(state, "neon-nights", "Mia", "Velocity")
+    race_management.enter_race(state, "neon-nights", "Leo", "Shadow")
+    race_management.start_race(state, "neon-nights")
+
+    results.record_race_result(
+        state,
+        "neon-nights",
+        ["Mia", "Leo"],
+        damage_reports={"Velocity": "minor", "Shadow": "minor"},
+        repair_slot="Friday 23:30",
+        auto_schedule_repairs=True,
+    )
+
+    assert state.missions["repair-neon-nights-velocity"].mission_type == "repair"
+    assert state.missions["repair-neon-nights-shadow"].mission_type == "repair"
+    assert state.cars["Velocity"].condition == "damaged"
+    assert state.cars["Shadow"].condition == "damaged"
+
+
+def test_record_race_result_marks_multiple_cars_damaged_without_auto_repairs(state):
+    """Multiple damage reports should still work when repair planning is disabled."""
+
+    registration.register_member(state, "Mia", "Driver")
+    registration.register_member(state, "Leo", "Driver")
+    inventory.add_car(state, "Velocity")
+    inventory.add_car(state, "Shadow")
+    race_management.create_race(
+        state, "neon-nights", "Industrial Strip", "Friday 22:00", 1200
+    )
+    race_management.enter_race(state, "neon-nights", "Mia", "Velocity")
+    race_management.enter_race(state, "neon-nights", "Leo", "Shadow")
+    race_management.start_race(state, "neon-nights")
+
+    results.record_race_result(
+        state,
+        "neon-nights",
+        ["Mia", "Leo"],
+        damage_reports={"Velocity": "minor", "Shadow": "major"},
+    )
+
+    assert state.cars["Velocity"].condition == "damaged"
+    assert state.cars["Shadow"].condition == "damaged"
+    assert state.missions == {}
