@@ -1,0 +1,163 @@
+flowchart TD
+    main_run["main.py -> cli.run()"]
+
+    subgraph CLI
+        cli_run["cli.run()"]
+        cli_seed["cli.seed_demo_data()"]
+        cli_print["cli._print_summary()"]
+    end
+
+    subgraph Registration
+        reg_normalize["registration._normalize_text()"]
+        reg_register["registration.register_member()"]
+        reg_require["registration.require_registered_member()"]
+    end
+
+    subgraph CrewManagement
+        crew_role["crew_management._normalize_role()"]
+        crew_busy["crew_management._members_busy_in_slot()"]
+        crew_assign["crew_management.assign_role()"]
+        crew_skill["crew_management.set_skill_level()"]
+        crew_available["crew_management.list_available_members()"]
+        crew_require["crew_management.require_role_members()"]
+    end
+
+    subgraph Inventory
+        inv_normalize["inventory._normalize_text()"]
+        inv_add_car["inventory.add_car()"]
+        inv_require_car["inventory.require_car()"]
+        inv_require_ready["inventory.require_available_car()"]
+        inv_add_part["inventory.add_spare_part()"]
+        inv_consume_part["inventory.consume_spare_part()"]
+        inv_add_tool["inventory.add_tool()"]
+        inv_require_tool["inventory.require_tool()"]
+        inv_cash["inventory.update_cash_balance()"]
+        inv_damage["inventory.mark_car_damaged()"]
+        inv_repair["inventory.repair_car()"]
+    end
+
+    subgraph Scheduling
+        sched_slot["scheduling._normalize_slot()"]
+        sched_lookup["scheduling._require_event()"]
+        sched_conflict["scheduling.ensure_no_conflict()"]
+        sched_event["scheduling.schedule_event()"]
+        sched_member["scheduling.assign_member_to_event()"]
+        sched_car["scheduling.assign_car_to_event()"]
+    end
+
+    subgraph RaceManagement
+        race_normalize["race_management._normalize_text()"]
+        race_lookup["race_management._require_race()"]
+        race_create["race_management.create_race()"]
+        race_enter["race_management.enter_race()"]
+        race_start["race_management.start_race()"]
+    end
+
+    subgraph MissionPlanning
+        mission_normalize["mission_planning._normalize_text()"]
+        mission_lookup["mission_planning.require_mission()"]
+        mission_plan["mission_planning.plan_mission()"]
+        mission_start["mission_planning.start_mission()"]
+    end
+
+    subgraph Maintenance
+        maintain_lookup["maintenance._require_repair_mission()"]
+        maintain_assess["maintenance.assess_damage()"]
+        maintain_schedule["maintenance.schedule_repair()"]
+        maintain_complete["maintenance.complete_repair()"]
+    end
+
+    subgraph Results
+        results_lookup["results._require_race()"]
+        results_slug["results._slugify()"]
+        results_record["results.record_race_result()"]
+        results_rank["results.get_rankings()"]
+    end
+
+    main_run --> cli_run
+
+    cli_run --> cli_seed
+    cli_run --> race_create
+    cli_run --> race_enter
+    cli_run --> race_start
+    cli_run --> results_record
+    cli_run --> mission_start
+    cli_run --> maintain_complete
+    cli_run --> mission_plan
+    cli_run --> cli_print
+
+    cli_seed --> reg_register
+    cli_seed --> crew_assign
+    cli_seed --> crew_skill
+    cli_seed --> inv_add_car
+    cli_seed --> inv_add_part
+    cli_seed --> inv_add_tool
+    cli_seed --> inv_cash
+
+    cli_print --> results_rank
+
+    reg_register --> reg_normalize
+    reg_require --> reg_normalize
+
+    crew_assign --> reg_require
+    crew_assign --> crew_role
+    crew_skill --> reg_require
+    crew_available --> crew_role
+    crew_available --> crew_busy
+    crew_require --> crew_role
+    crew_require --> crew_available
+
+    inv_require_ready --> inv_require_car
+    inv_add_part --> inv_normalize
+    inv_consume_part --> inv_normalize
+    inv_add_tool --> inv_normalize
+    inv_require_tool --> inv_normalize
+    inv_damage --> inv_require_car
+    inv_damage --> inv_normalize
+    inv_repair --> inv_require_car
+
+    sched_conflict --> sched_slot
+    sched_event --> sched_conflict
+    sched_event --> sched_slot
+    sched_member --> reg_require
+    sched_member --> sched_lookup
+    sched_member --> sched_conflict
+    sched_car --> inv_require_car
+    sched_car --> sched_lookup
+    sched_car --> sched_conflict
+
+    race_create --> race_normalize
+    race_create --> sched_event
+    race_enter --> race_lookup
+    race_enter --> reg_require
+    race_enter --> inv_require_ready
+    race_enter --> sched_conflict
+    race_enter --> sched_member
+    race_enter --> sched_car
+    race_start --> race_lookup
+
+    mission_plan --> mission_normalize
+    mission_plan --> crew_require
+    mission_plan --> inv_require_car
+    mission_plan --> inv_require_ready
+    mission_plan --> sched_event
+    mission_plan --> sched_member
+    mission_start --> mission_lookup
+
+    maintain_lookup --> mission_lookup
+    maintain_assess --> inv_require_car
+    maintain_assess --> maintain_schedule
+    maintain_schedule --> inv_require_car
+    maintain_schedule --> inv_require_tool
+    maintain_schedule --> mission_plan
+    maintain_complete --> maintain_lookup
+    maintain_complete --> inv_require_tool
+    maintain_complete --> inv_consume_part
+    maintain_complete --> inv_cash
+    maintain_complete --> inv_repair
+
+    results_record --> results_lookup
+    results_record --> inv_cash
+    results_record --> inv_damage
+    results_record --> results_slug
+    results_record --> maintain_assess
