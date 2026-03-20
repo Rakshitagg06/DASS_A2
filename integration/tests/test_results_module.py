@@ -68,3 +68,30 @@ def test_record_race_result_can_plan_a_follow_up_repair(state):
     assert repair_mission.mission_type == "repair"
     assert repair_mission.assigned_members == {"mechanic": ["Nova"]}
     assert state.cars["Velocity"].condition == "damaged"
+
+
+def test_record_race_result_rolls_back_if_auto_repair_planning_fails(state):
+    """Failed auto-repair planning should not partially mutate race state."""
+
+    _build_active_race(state)
+
+    try:
+        results.record_race_result(
+            state,
+            "neon-nights",
+            ["Mia"],
+            damage_reports={"Velocity": "minor"},
+            repair_slot="Friday 23:30",
+            auto_schedule_repairs=True,
+        )
+    except StreetRaceError as error:
+        assert "Repair mission requires more belt parts" in str(error)
+    else:
+        raise AssertionError("Expected repair planning failure without stocked parts.")
+
+    assert state.races["neon-nights"].status == "active"
+    assert state.races["neon-nights"].placements == []
+    assert state.cash_balance == 0
+    assert state.rankings["Mia"] == 0
+    assert state.cars["Velocity"].condition == "ready"
+    assert state.missions == {}
