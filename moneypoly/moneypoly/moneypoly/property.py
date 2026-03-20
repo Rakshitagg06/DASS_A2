@@ -1,3 +1,5 @@
+"""Property and property-group models for the MoneyPoly board."""
+
 class Property:
     """Represents a single purchasable property tile on the MoneyPoly board."""
 
@@ -47,10 +49,9 @@ class Property:
         """
         if not self.is_mortgaged:
             return 0
-        else:
-            cost = int(self.mortgage_value * 1.1)
-            self.is_mortgaged = False
-            return cost
+        cost = int(self.mortgage_value * 1.1)
+        self.is_mortgaged = False
+        return cost
 
     def is_available(self):
         """Return True if this property can be purchased (unowned, not mortgaged)."""
@@ -62,6 +63,8 @@ class Property:
 
 
 class PropertyGroup:
+    """Group together related properties that share a colour set."""
+
     def __init__(self, name, color):
         self.name = name
         self.color = color
