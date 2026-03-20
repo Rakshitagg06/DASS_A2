@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from . import crew_management, inventory, scheduling
+from . import crew_management, inventory, registration, scheduling
 from .models import Mission, StreetRaceError, StreetRaceState
 
 
@@ -48,6 +48,11 @@ def plan_mission(  # pylint: disable=too-many-arguments,too-many-positional-argu
     assignments = crew_management.require_role_members(
         state, required_roles, normalized_slot
     )
+    assigned_members = [
+        member_name
+        for member_names in assignments.values()
+        for member_name in member_names
+    ]
     reserved_cars: list[str] = []
     assigned_car: str | None = None
     if car_name is not None:
@@ -57,11 +62,13 @@ def plan_mission(  # pylint: disable=too-many-arguments,too-many-positional-argu
             assigned_car = inventory.require_available_car(state, car_name).name
         reserved_cars = [assigned_car]
     scheduling.schedule_event(
-        state, normalized_id, "mission", normalized_slot, cars=reserved_cars
+        state,
+        normalized_id,
+        "mission",
+        normalized_slot,
+        participants=assigned_members,
+        cars=reserved_cars,
     )
-    for member_names in assignments.values():
-        for member_name in member_names:
-            scheduling.assign_member_to_event(state, member_name, normalized_id)
     mission = Mission(
         mission_id=normalized_id,
         mission_type=normalized_type,
@@ -83,5 +90,44 @@ def start_mission(state: StreetRaceState, mission_id: str) -> Mission:
         raise StreetRaceError(
             f"Mission {mission.mission_id} cannot be started from {mission.status}."
         )
+    if mission.mission_id not in state.schedule:
+        raise StreetRaceError(f"Mission {mission.mission_id} is missing its schedule entry.")
+    for role in mission.required_roles:
+        assigned_members = mission.assigned_members.get(role, [])
+        if not assigned_members:
+            raise StreetRaceError(
+                f"Mission {mission.mission_id} is missing an assigned {role}."
+            )
+        for member_name in assigned_members:
+            member = registration.require_registered_member(state, member_name)
+            if role not in member.roles:
+                raise StreetRaceError(
+                    f"{member.name} can no longer satisfy the {role} role."
+                )
+    if mission.car_name is not None:
+        if mission.mission_type == "repair":
+            inventory.require_car(state, mission.car_name)
+        else:
+            inventory.require_available_car(state, mission.car_name)
     mission.status = "active"
+    return mission
+
+
+def complete_mission(state: StreetRaceState, mission_id: str) -> Mission:
+    """Complete an active non-repair mission and pay out any reward."""
+
+    mission = require_mission(state, mission_id)
+    if mission.mission_type == "repair":
+        raise StreetRaceError("Repair missions must be completed through maintenance.")
+    if mission.status != "active":
+        raise StreetRaceError("Mission must be active before completion.")
+    if mission.car_name is not None:
+        inventory.require_available_car(state, mission.car_name)
+    if mission.reward:
+        inventory.update_cash_balance(
+            state,
+            mission.reward,
+            reason=f"mission reward for {mission.mission_id}",
+        )
+    mission.status = "completed"
     return mission

@@ -72,6 +72,10 @@ def schedule_event(  # pylint: disable=too-many-arguments,too-many-positional-ar
         raise StreetRaceError(f"Scheduled event {normalized_id} already exists.")
     participant_names = [name.strip() for name in participants or [] if name.strip()]
     car_names = [name.strip() for name in cars or [] if name.strip()]
+    for participant_name in participant_names:
+        registration.require_registered_member(state, participant_name)
+    for car_name in car_names:
+        inventory.require_car(state, car_name)
     ensure_no_conflict(state, slot, participant_names, car_names)
     event = ScheduledEvent(
         event_id=normalized_id,

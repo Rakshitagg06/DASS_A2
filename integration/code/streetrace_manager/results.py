@@ -48,6 +48,20 @@ def record_race_result(  # pylint: disable=too-many-arguments,too-many-positiona
         raise StreetRaceError(
             "Race result placements must match the drivers entered in the race."
         )
+    normalized_damage_reports: dict[str, str] = {}
+    if damage_reports:
+        race_cars = {entry.car_name for entry in race.entries}
+        for car_name, severity in damage_reports.items():
+            normalized_car_name = car_name.strip()
+            if normalized_car_name not in race_cars:
+                raise StreetRaceError(
+                    f"Damage report for {normalized_car_name} does not match a race entry."
+                )
+            normalized_damage_reports[normalized_car_name] = severity
+        if auto_schedule_repairs and (repair_slot is None or not repair_slot.strip()):
+            raise StreetRaceError(
+                "Repair slot is required when auto-scheduling repairs."
+            )
     race.status = "completed"
     race.placements = normalized_placements
     for position, driver_name in enumerate(normalized_placements, start=1):
@@ -57,19 +71,10 @@ def record_race_result(  # pylint: disable=too-many-arguments,too-many-positiona
         inventory.update_cash_balance(
             state, race.prize_money, reason=f"prize money for race {race.race_id}"
         )
-    if damage_reports:
-        race_cars = {entry.car_name for entry in race.entries}
-        for car_name, severity in damage_reports.items():
-            if car_name not in race_cars:
-                raise StreetRaceError(
-                    f"Damage report for {car_name} does not match a race entry."
-                )
+    if normalized_damage_reports:
+        for car_name, severity in normalized_damage_reports.items():
             damaged_car = inventory.mark_car_damaged(state, car_name, severity)
             if auto_schedule_repairs:
-                if repair_slot is None or not repair_slot.strip():
-                    raise StreetRaceError(
-                        "Repair slot is required when auto-scheduling repairs."
-                    )
                 repair_id = (
                     f"repair-{_slugify(race.race_id)}-{_slugify(damaged_car.name)}"
                 )

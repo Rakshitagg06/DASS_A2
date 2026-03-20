@@ -86,5 +86,10 @@ def start_race(state: StreetRaceState, race_id: str) -> Race:
         raise StreetRaceError(f"Race {race.race_id} cannot be started from {race.status}.")
     if not race.entries:
         raise StreetRaceError("A race needs at least one entry before it can start.")
+    for entry in race.entries:
+        driver = registration.require_registered_member(state, entry.driver_name)
+        if "driver" not in driver.roles:
+            raise StreetRaceError(f"{driver.name} does not have the driver role.")
+        inventory.require_available_car(state, entry.car_name)
     race.status = "active"
     return race

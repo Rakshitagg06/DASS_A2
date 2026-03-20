@@ -58,6 +58,7 @@ flowchart TD
         mission_lookup["mission_planning.require_mission()"]
         mission_plan["mission_planning.plan_mission()"]
         mission_start["mission_planning.start_mission()"]
+        mission_complete["mission_planning.complete_mission()"]
     end
 
     subgraph Maintenance
@@ -119,6 +120,8 @@ flowchart TD
     sched_conflict --> sched_slot
     sched_event --> sched_conflict
     sched_event --> sched_slot
+    sched_event --> reg_require
+    sched_event --> inv_require_car
     sched_member --> reg_require
     sched_member --> sched_lookup
     sched_member --> sched_conflict
@@ -135,14 +138,21 @@ flowchart TD
     race_enter --> sched_member
     race_enter --> sched_car
     race_start --> race_lookup
+    race_start --> reg_require
+    race_start --> inv_require_ready
 
     mission_plan --> mission_normalize
     mission_plan --> crew_require
     mission_plan --> inv_require_car
     mission_plan --> inv_require_ready
     mission_plan --> sched_event
-    mission_plan --> sched_member
     mission_start --> mission_lookup
+    mission_start --> reg_require
+    mission_start --> inv_require_car
+    mission_start --> inv_require_ready
+    mission_complete --> mission_lookup
+    mission_complete --> inv_require_ready
+    mission_complete --> inv_cash
 
     maintain_lookup --> mission_lookup
     maintain_assess --> inv_require_car
