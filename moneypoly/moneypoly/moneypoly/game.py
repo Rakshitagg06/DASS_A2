@@ -80,6 +80,10 @@ class Game:
     def _move_and_resolve(self, player, steps):
         """Move `player` by `steps` and trigger whatever tile they land on."""
         player.move(steps)
+        self._resolve_current_tile(player)
+
+    def _resolve_current_tile(self, player):
+        """Resolve the effect of the tile where `player` is currently standing."""
         position = player.position
         tile = self.board.get_tile_type(position)
         print(f"  {player.name} moved to position {position}  [{tile}]")
@@ -355,11 +359,7 @@ class Game:
         if value < old_pos:
             player.add_money(GO_SALARY)
             print(f"  {player.name} passed Go and collected ${GO_SALARY}.")
-        tile = self.board.get_tile_type(value)
-        if tile == "property":
-            prop = self.board.get_property_at(value)
-            if prop is not None:
-                self._handle_property_tile(player, prop)
+        self._resolve_current_tile(player)
 
     def _handle_birthday_card(self, player, value):
         """Collect a birthday payment from each other player who can afford it."""
