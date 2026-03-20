@@ -71,6 +71,9 @@ class Game:
         self._move_and_resolve(player, roll)
         if player not in self.players:
             return
+        if player.in_jail:
+            self.advance_turn()
+            return
 
         # Rolling doubles earns an extra turn
         if self.dice.is_doubles():

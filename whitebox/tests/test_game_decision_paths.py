@@ -62,6 +62,61 @@ def test_play_turn_sends_the_player_to_jail_after_three_doubles(monkeypatch):
     assert game.current_player().name == "Bob"
 
 
+def test_play_turn_does_not_grant_an_extra_roll_after_doubles_land_on_go_to_jail(
+    monkeypatch,
+):
+    """Landing on Go To Jail with doubles should still end the turn immediately."""
+    game = Game(["Alice", "Bob"])
+    player = game.players[0]
+    player.position = 24
+
+    def fake_roll():
+        game.dice.die1 = 3
+        game.dice.die2 = 3
+        game.dice.doubles_streak = 1
+        return 6
+
+    monkeypatch.setattr(game, "interactive_menu", lambda _player: None)
+    monkeypatch.setattr(game.dice, "roll", fake_roll)
+
+    game.play_turn()
+
+    assert player.in_jail is True
+    assert player.position == 10
+    assert game.current_player().name == "Bob"
+    assert game.turn_number == 1
+
+
+def test_play_turn_does_not_grant_an_extra_roll_after_a_doubles_jail_card(
+    monkeypatch,
+):
+    """A jail card should end the turn even when the triggering roll was doubles."""
+    game = Game(["Alice", "Bob"])
+    player = game.players[0]
+    player.position = 3
+
+    def fake_roll():
+        game.dice.die1 = 2
+        game.dice.die2 = 2
+        game.dice.doubles_streak = 1
+        return 4
+
+    monkeypatch.setattr(game, "interactive_menu", lambda _player: None)
+    monkeypatch.setattr(game.dice, "roll", fake_roll)
+    monkeypatch.setattr(
+        game.decks["chance"],
+        "draw",
+        lambda: {"description": "Go to Jail.", "action": "jail", "value": 0},
+    )
+
+    game.play_turn()
+
+    assert player.in_jail is True
+    assert player.position == 10
+    assert game.current_player().name == "Bob"
+    assert game.turn_number == 1
+
+
 def test_play_turn_processes_jailed_players_and_then_advances(monkeypatch):
     """A jailed player's turn should use the jail flow and then pass the turn on."""
     game = Game(["Alice", "Bob"])
