@@ -106,7 +106,11 @@ def start_mission(state: StreetRaceState, mission_id: str) -> Mission:
                 )
     if mission.car_name is not None:
         if mission.mission_type == "repair":
-            inventory.require_car(state, mission.car_name)
+            car = inventory.require_car(state, mission.car_name)
+            if car.condition != "damaged":
+                raise StreetRaceError(
+                    f"{car.name} is not damaged and cannot start a repair mission."
+                )
         else:
             inventory.require_available_car(state, mission.car_name)
     mission.status = "active"

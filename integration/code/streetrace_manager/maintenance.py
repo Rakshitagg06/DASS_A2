@@ -26,6 +26,16 @@ def _require_repair_mission(state: StreetRaceState, mission_id: str) -> Mission:
     return mission
 
 
+def _ensure_no_open_repair_for_car(state: StreetRaceState, car_name: str) -> None:
+    """Reject duplicate planned or active repair missions for the same car."""
+
+    for mission in state.missions.values():
+        if mission.mission_type != "repair" or mission.car_name != car_name:
+            continue
+        if mission.status in {"planned", "active"}:
+            raise StreetRaceError(f"{car_name} already has an unfinished repair mission.")
+
+
 def assess_damage(
     state: StreetRaceState, car_name: str, severity: str, mission_id: str, slot: str
 ) -> Mission:
@@ -65,6 +75,7 @@ def schedule_repair(  # pylint: disable=too-many-arguments,too-many-positional-a
     car = inventory.require_car(state, car_name)
     if car.condition != "damaged":
         raise StreetRaceError(f"{car.name} is not damaged and does not need repairs.")
+    _ensure_no_open_repair_for_car(state, car.name)
     normalized_parts: dict[str, int] = {}
     for part_name, quantity in (parts_needed or {}).items():
         normalized_part = part_name.strip().lower()

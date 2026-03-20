@@ -22,7 +22,7 @@ testing each function in isolation.
 
 ## Test Execution Summary
 
-Test date: March 20, 2026
+Test date: March 21, 2026
 
 Commands used:
 
@@ -33,8 +33,8 @@ python -m pytest integration/tests
 
 Observed results:
 
-- `integration/tests/test_integration_flows.py`: `13 passed`
-- `integration/tests`: `63 passed`
+- `integration/tests/test_integration_flows.py`: `15 passed`
+- `integration/tests`: `69 passed`
 
 Main file for the cross-module scenarios:
 
@@ -172,6 +172,26 @@ Main file for the cross-module scenarios:
 - Errors or logical issues found: None in this scenario after the current fixes.
 - Automated test: `test_cli_run_executes_the_demo_flow_end_to_end`
 
+### IT-14 Reject a Duplicate Repair Mission for the Same Damaged Car
+
+- Scenario: Finish a race with damage, create one repair mission for `Velocity`, and then try to schedule a second unfinished repair mission for the same car.
+- Modules involved: Registration, Inventory, Race Management, Results, Maintenance, Mission Planning
+- Why this test is needed: It checks that the repair workflow does not allow duplicate unfinished jobs for one damaged car. Without this guard, later repair flows can spend parts and cash twice for the same problem.
+- Expected result: The second repair mission should be rejected with a clear duplicate-repair error.
+- Actual result after testing: Passed. The system blocked the backup repair mission because `Velocity` already had an unfinished repair job.
+- Errors or logical issues found: A real logical issue was found here. Earlier, the system allowed overlapping repair missions for the same damaged car, which could later double-charge labor and spare parts. This was fixed in `L Error 4, Part 2: block duplicate repair missions for the same car`.
+- Automated test: `test_damaged_car_cannot_receive_a_second_unfinished_repair_mission`
+
+### IT-15 Block a Stale Repair Mission After the Car Was Already Fixed
+
+- Scenario: Plan a repair mission for a damaged car, repair the car before the mission starts, and then try to start the now-stale repair mission.
+- Modules involved: Inventory, Maintenance, Mission Planning
+- Why this test is needed: It checks that mission start logic still respects the current car state instead of only trusting old mission data.
+- Expected result: The repair mission should fail to start because the car is no longer damaged.
+- Actual result after testing: Passed. The system rejected the stale repair mission and reported that the car could not start a repair workflow anymore.
+- Errors or logical issues found: This scenario was tied to the same repair-state bug. The start flow now revalidates that a repair target is still damaged before activation.
+- Automated test: `test_repair_mission_cannot_start_after_the_car_was_already_fixed`
+
 ## Errors Found During Part 2 Testing
 
 The main StreetRace issues detected during Part 2 testing were:
@@ -182,6 +202,8 @@ The main StreetRace issues detected during Part 2 testing were:
   Race flows did not fail cleanly when their Scheduling dependency was missing.
 - `L Error 3, Part 2: roll back partial race result updates`
   Failed auto-repair planning could leave partially applied race-result state behind.
+- `L Error 4, Part 2: block duplicate repair missions for the same car`
+  A damaged car could collect overlapping repair missions, which created stale repair workflows and risked double-charging labor and spare parts.
 
 ## Simple Conclusion
 

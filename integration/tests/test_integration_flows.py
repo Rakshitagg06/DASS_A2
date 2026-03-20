@@ -207,6 +207,67 @@ def test_completed_race_and_repair_flow_updates_inventory_resources(state):
     assert state.cars["Velocity"].condition == "ready"
 
 
+def test_damaged_car_cannot_receive_a_second_unfinished_repair_mission(state):
+    """A damaged car should not accumulate overlapping repair missions."""
+
+    registration.register_member(state, "Mia", "Driver")
+    registration.register_member(state, "Nova", "Mechanic")
+    inventory.add_car(state, "Velocity")
+    inventory.add_spare_part(state, "belt", 2)
+    inventory.add_tool(state, "wrench", 1)
+    race_management.create_race(
+        state, "neon-nights", "Industrial Strip", "Friday 22:00", 1200
+    )
+    race_management.enter_race(state, "neon-nights", "Mia", "Velocity")
+    race_management.start_race(state, "neon-nights")
+    results.record_race_result(
+        state, "neon-nights", ["Mia"], damage_reports={"Velocity": "minor"}
+    )
+    maintenance.assess_damage(
+        state, "Velocity", "minor", "repair-neon-nights-velocity", "Friday 23:30"
+    )
+
+    try:
+        maintenance.schedule_repair(
+            state,
+            "repair-neon-nights-velocity-backup",
+            "Velocity",
+            "Saturday 00:30",
+            parts_needed={"belt": 1},
+            tools_needed=["wrench"],
+            labor_cost=200,
+        )
+    except StreetRaceError as error:
+        assert "unfinished repair mission" in str(error)
+    else:
+        raise AssertionError("Expected the duplicate repair mission to be rejected.")
+
+
+def test_repair_mission_cannot_start_after_the_car_was_already_fixed(state):
+    """A stale repair mission should not start once the car is ready again."""
+
+    registration.register_member(state, "Nova", "Mechanic")
+    inventory.add_car(state, "Velocity")
+    inventory.mark_car_damaged(state, "Velocity", "minor")
+    maintenance.schedule_repair(
+        state,
+        "repair-night-1",
+        "Velocity",
+        "Friday 23:30",
+        parts_needed={},
+        tools_needed=[],
+        labor_cost=0,
+    )
+    inventory.repair_car(state, "Velocity")
+
+    try:
+        mission_planning.start_mission(state, "repair-night-1")
+    except StreetRaceError as error:
+        assert "cannot start a repair mission" in str(error)
+    else:
+        raise AssertionError("Expected a ready car to block the stale repair mission.")
+
+
 def test_failed_auto_repair_planning_rolls_back_the_race_result(state):
     """A repair-planning failure should leave the race and inventory state untouched."""
 
