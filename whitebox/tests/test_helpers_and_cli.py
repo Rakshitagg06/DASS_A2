@@ -1,5 +1,7 @@
 """Decision-focused tests for helper modules, UI, and the CLI entry point."""
 
+from pathlib import Path
+import runpy
 from importlib import import_module
 
 import pytest
@@ -51,6 +53,7 @@ def test_board_reports_blank_and_special_tiles():
     board = Board()
 
     assert board.get_property_at(40) is None
+    assert board.get_tile_type(1) == "property"
     assert board.get_tile_type(12) == "blank"
     assert board.get_tile_type(0) == "go"
     assert board.is_special_tile(0) is True
@@ -116,6 +119,18 @@ def test_dice_reset_describe_and_repr():
     dice.reset()
 
     assert (dice.die1, dice.die2, dice.doubles_streak) == (0, 0, 0)
+
+
+def test_dice_roll_increments_the_doubles_streak(monkeypatch):
+    """A doubles roll should increment the tracked doubles streak."""
+    values = iter([5, 5])
+    monkeypatch.setattr("random.randint", lambda _low, _high: next(values))
+    dice = Dice()
+
+    total = dice.roll()
+
+    assert total == 10
+    assert dice.doubles_streak == 1
 
 
 def test_player_validation_and_display_helpers():
@@ -211,6 +226,15 @@ def test_ui_print_helpers_cover_player_board_and_standings(capsys):
     assert "(* = mortgaged)" in output
 
 
+def test_ui_print_player_card_handles_players_without_properties(capsys):
+    """Player cards should print a friendly placeholder when no property is owned."""
+    player = Player("Dana")
+
+    ui.print_player_card(player)
+
+    assert "Properties: none" in capsys.readouterr().out
+
+
 def test_ui_input_helpers_cover_fallbacks_and_negative_confirmation(monkeypatch):
     """Input helpers should fall back on EOF and reject non-yes answers."""
     monkeypatch.setattr("builtins.input", lambda _prompt: (_ for _ in ()).throw(EOFError))
@@ -282,3 +306,23 @@ def test_main_handles_setup_value_errors(monkeypatch, capsys):
     entry.main()
 
     assert "Setup error: bad setup" in capsys.readouterr().out
+
+
+def test_main_module_runs_from_the_script_entry_point(monkeypatch):
+    """Executing the file as __main__ should trigger the CLI entry point."""
+    called = []
+    main_path = Path(__file__).resolve().parents[2] / "moneypoly" / "moneypoly" / "main.py"
+
+    class DummyGame:
+        def __init__(self, _names):
+            called.append("init")
+
+        def run(self):
+            called.append("run")
+
+    monkeypatch.setattr("builtins.input", lambda _prompt: "Alice,Bob")
+    monkeypatch.setattr("moneypoly.game.Game", DummyGame)
+
+    runpy.run_path(str(main_path), run_name="__main__")
+
+    assert called == ["init", "run"]
