@@ -147,6 +147,7 @@ def test_player_validation_and_display_helpers():
     with pytest.raises(ValueError):
         player.deduct_money(-1)
 
+    player.add_property(prop)
     player.remove_property(Property("Ghost", 99, 10, 1))
 
     assert player.count_properties() == 1
@@ -189,14 +190,16 @@ def test_property_group_helpers_cover_owner_counts_size_and_repr():
     group.add_property(second)
     first.owner = alice
     second.owner = bob
+    third = Property("Marvin Gardens", 29, 280, 24)
+    group.add_property(third)
 
     counts = group.get_owner_counts()
 
     assert group.all_owned_by(None) is False
     assert counts[alice] == 1
     assert counts[bob] == 1
-    assert group.size() == 2
-    assert "2 properties" in repr(group)
+    assert group.size() == 3
+    assert "3 properties" in repr(group)
 
 
 def test_ui_print_helpers_cover_player_board_and_standings(capsys):

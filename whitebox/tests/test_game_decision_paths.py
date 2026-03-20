@@ -573,6 +573,19 @@ def test_interactive_menu_skips_non_positive_loan_requests(monkeypatch):
     assert called == []
 
 
+def test_interactive_menu_ignores_invalid_choices_and_loops(monkeypatch):
+    """Unknown menu choices should be ignored and the menu should keep running."""
+    game = Game(["Alice", "Bob"])
+    player = game.players[0]
+    choices = iter([9, 0])
+    monkeypatch.setattr(
+        "moneypoly.ui.safe_int_input",
+        lambda _prompt, default=0: next(choices),
+    )
+
+    game.interactive_menu(player)
+
+
 def test_menu_mortgage_covers_empty_and_valid_selection(monkeypatch):
     """Mortgage menu should handle both no-property and valid-selection cases."""
     game = Game(["Alice", "Bob"])
