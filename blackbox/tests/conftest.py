@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import collections
 import json
 import shutil
 import socket
@@ -17,6 +16,11 @@ import requests
 
 ROLL_NUMBER = "2026001"
 API_PORT = 8080
+SEEDED_CLEAN_USER_ID = 7
+SEEDED_REVIEW_USER_ID = 29
+SEEDED_SECOND_REVIEW_USER_ID = 30
+SEEDED_DELIVERED_ORDER_USER_ID = 681
+SEEDED_DELIVERED_ORDER_ID = 2997
 
 
 class QuickCartClient:
@@ -77,24 +81,19 @@ class QuickCartClient:
         }
 
     def clean_user_id(self) -> int:
-        users = self.admin_json("/admin/users")
-        cart_user_ids = {
-            cart["user_id"] for cart in self.admin_json("/admin/carts")
-        }
-        order_counts = collections.Counter(
-            order["user_id"] for order in self.admin_json("/admin/orders")
-        )
-        for user in users:
-            user_id = user["user_id"]
-            if user_id not in cart_user_ids and order_counts[user_id] == 0:
-                return user_id
-        raise AssertionError("Could not find a clean seeded user for black-box tests.")
+        return SEEDED_CLEAN_USER_ID
+
+    def user_with_addresses_id(self) -> int:
+        return SEEDED_CLEAN_USER_ID
+
+    def review_user_id(self) -> int:
+        return SEEDED_REVIEW_USER_ID
+
+    def second_review_user_id(self) -> int:
+        return SEEDED_SECOND_REVIEW_USER_ID
 
     def delivered_order(self) -> tuple[int, int]:
-        for order in self.admin_json("/admin/orders"):
-            if order["order_status"] == "DELIVERED":
-                return order["user_id"], order["order_id"]
-        raise AssertionError("Expected at least one delivered seeded order.")
+        return SEEDED_DELIVERED_ORDER_USER_ID, SEEDED_DELIVERED_ORDER_ID
 
 
 def _repo_root() -> Path:
