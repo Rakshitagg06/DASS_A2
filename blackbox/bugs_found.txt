@@ -370,3 +370,51 @@ Observed resultant JSON (example):
 TEST_Case_That_gave_bug:
 fun: test_wallet_pay_deducts_the_exact_requested_amount()
 file: blackbox/tests/test_wallet_loyalty_orders.py
+
+9). 
+#: QC-BUG-09
+
+TITLE:
+Invoice total can mismatch checkout total for fresh orders.
+
+ENDPOINT TESTED:
+Method: GET
+URL: http://127.0.0.1:8080/api/v1/orders/{order_id}/invoice
+
+REQUEST PAYLOAD:
+Headers:
+X-Roll-Number: 2024101087
+X-User-ID: 31
+Query Parameters: None
+Body: None
+
+Precondition Step Executed:
+1. Add one item to cart (product_id=1, quantity=1).
+2. POST /checkout with {"payment_method":"CARD"} and capture order_id.
+
+EXPECTED RESULT:
+HTTP Status: 200
+Invoice must match checkout totals exactly.
+
+EXPECTED JSON:
+{
+  "order_id": "3001",
+  "subtotal": 120,
+  "gst_amount": 6,
+  "total_amount": 126
+}
+
+ACTUAL RESULT:
+HTTP Status: 200
+Invoice total_amount is inconsistent with checkout total_amount for same order.
+Observed resultant JSON (example):
+{
+  "order_id": "3001",
+  "subtotal": 120,
+  "gst_amount": 0,
+  "total_amount": 0
+}
+
+TEST_Case_That_gave_bug:
+fun: test_orders_list_detail_and_invoice_match_a_new_checkout()
+file: blackbox/tests/test_wallet_loyalty_orders.py
