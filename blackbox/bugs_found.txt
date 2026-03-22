@@ -456,3 +456,46 @@ Observed resultant JSON:
 TEST_Case_That_gave_bug:
 fun: test_cancelling_a_new_order_restores_product_stock()
 file: blackbox/tests/test_wallet_loyalty_orders.py
+
+11). 
+#: QC-BUG-11
+
+TITLE:
+Review validation accepts rating 0.
+
+ENDPOINT TESTED:
+Method: POST
+URL: http://127.0.0.1:8080/api/v1/products/250/reviews
+
+REQUEST PAYLOAD:
+Headers:
+X-Roll-Number: 2024101087
+X-User-ID: 29
+Content-Type: application/json
+Query Parameters: None
+Body:
+{"rating": 0, "comment": "bad"}
+
+Precondition Step Executed: None.
+
+EXPECTED RESULT:
+HTTP Status: 400
+Rating must be between 1 and 5.
+
+EXPECTED JSON:
+{"error": "Rating must be between 1 and 5"}
+
+ACTUAL RESULT:
+HTTP Status: 200
+Review is accepted with rating 0.
+Observed resultant JSON (example):
+{
+  "review_id": 1001,
+  "user_id": 29,
+  "rating": 0,
+  "comment": "bad"
+}
+
+TEST_Case_That_gave_bug:
+fun: test_reviews_reject_ratings_outside_the_documented_range()
+file: blackbox/tests/test_reviews_and_support.py
