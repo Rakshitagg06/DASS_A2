@@ -150,3 +150,42 @@ Observed resultant JSON (example):
 TEST_Case_That_gave_bug:
 fun: test_product_sorting_respects_the_requested_price_order()
 file: blackbox/tests/test_profile_addresses_products.py
+
+4). 
+#: QC-BUG-04
+
+TITLE:
+Cart add accepts zero and negative quantities.
+
+ENDPOINT TESTED:
+Method: POST
+URL: http://127.0.0.1:8080/api/v1/cart/add
+
+REQUEST PAYLOAD:
+Headers:
+X-Roll-Number: 2024101087
+X-User-ID: 7
+Content-Type: application/json
+Query Parameters: None
+Body (repro A):
+{"product_id": 1, "quantity": 0}
+Body (repro B):
+{"product_id": 1, "quantity": -1}
+
+Precondition Step Executed: DELETE /cart/clear
+
+EXPECTED RESULT:
+HTTP Status: 400
+Quantity must be >= 1.
+
+EXPECTED JSON:
+{"error": "Quantity must be >= 1"}
+
+ACTUAL RESULT:
+HTTP Status: 200
+Observed resultant JSON:
+{"message": "Item added to cart"}
+
+TEST_Case_That_gave_bug:
+fun: test_cart_rejects_non_positive_add_quantities()
+file: blackbox/tests/test_cart_coupon_checkout.py
