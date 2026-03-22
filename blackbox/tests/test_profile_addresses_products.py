@@ -3,7 +3,7 @@
 import pytest
 
 
-def test_profile_update_persists_a_valid_name_and_phone(api):
+def test_bb61(api):
     user_id = api.clean_user_id()
 
     response = api.put(
@@ -18,7 +18,7 @@ def test_profile_update_persists_a_valid_name_and_phone(api):
     assert profile["phone"] == "1234567890"
 
 
-def test_profile_update_rejects_a_name_that_is_too_short(api):
+def test_bb62(api):
     user_id = api.clean_user_id()
 
     response = api.put(
@@ -31,7 +31,7 @@ def test_profile_update_rejects_a_name_that_is_too_short(api):
     assert "Name must be between 2 and 50 characters" in response.json()["error"]
 
 
-def test_profile_update_rejects_a_phone_that_is_not_ten_digits(api):
+def test_bb63(api):
     user_id = api.clean_user_id()
 
     response = api.put(
@@ -44,7 +44,24 @@ def test_profile_update_rejects_a_phone_that_is_not_ten_digits(api):
     assert "Phone must be exactly 10 digits" in response.json()["error"]
 
 
-def test_creating_an_address_returns_the_full_created_object(api):
+@pytest.mark.xfail(
+    strict=True,
+    reason="QuickCart accepts non-digit phone values when the length is 10 characters.",
+)
+def test_bb64(api):
+    user_id = api.clean_user_id()
+
+    response = api.put(
+        "/profile",
+        user_id=user_id,
+        json={"name": "Valid Name", "phone": "98A654321B"},
+    )
+
+    assert response.status_code == 400
+    assert "Phone must be exactly 10 digits" in response.json()["error"]
+
+
+def test_bb65(api):
     user_id = api.user_with_addresses_id()
     payload = {
         "label": "OFFICE",
@@ -67,7 +84,53 @@ def test_creating_an_address_returns_the_full_created_object(api):
     assert body["address"]["is_default"] is False
 
 
-def test_updating_an_address_only_changes_the_street_and_default_flag(api):
+@pytest.mark.xfail(
+    strict=False,
+    reason="Alternate runtime report: valid 6-digit pincode 500001 can be rejected with Invalid pincode.",
+)
+def test_bb66(api):
+    user_id = api.user_with_addresses_id()
+
+    response = api.post(
+        "/addresses",
+        user_id=user_id,
+        json={
+            "label": "OTHER",
+            "street": "Main Street 12",
+            "city": "Hyderabad",
+            "pincode": "500001",
+            "is_default": False,
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["address"]["pincode"] == "500001"
+
+
+@pytest.mark.xfail(
+    strict=False,
+    reason="Alternate runtime report: non-digit pincode values can be accepted instead of rejected.",
+)
+def test_bb67(api):
+    user_id = api.user_with_addresses_id()
+
+    response = api.post(
+        "/addresses",
+        user_id=user_id,
+        json={
+            "label": "HOME",
+            "street": "Main Street 12",
+            "city": "Hyderabad",
+            "pincode": "ABCDE",
+            "is_default": False,
+        },
+    )
+
+    assert response.status_code == 400
+    assert "Pincode" in response.json()["error"]
+
+
+def test_bb68(api):
     user_id = api.user_with_addresses_id()
     original = api.user_json("/addresses", user_id)[0]
 
@@ -92,7 +155,7 @@ def test_updating_an_address_only_changes_the_street_and_default_flag(api):
     assert updated["pincode"] == original["pincode"]
 
 
-def test_deleting_a_missing_address_returns_404(api):
+def test_bb69(api):
     user_id = api.clean_user_id()
 
     response = api.delete("/addresses/999999", user_id=user_id)
@@ -105,7 +168,7 @@ def test_deleting_a_missing_address_returns_404(api):
     strict=True,
     reason="QuickCart allows multiple default addresses after creating a new default.",
 )
-def test_creating_a_default_address_clears_the_previous_default(api):
+def test_bb70(api):
     user_id = api.user_with_addresses_id()
 
     response = api.post(
@@ -127,7 +190,7 @@ def test_creating_a_default_address_clears_the_previous_default(api):
     assert default_addresses[0]["address_id"] == response.json()["address"]["address_id"]
 
 
-def test_product_list_only_returns_active_products(api):
+def test_bb71(api):
     user_id = api.clean_user_id()
     active_products = api.user_json("/products", user_id)
 
@@ -136,7 +199,7 @@ def test_product_list_only_returns_active_products(api):
     assert 90 not in {product["product_id"] for product in active_products}
 
 
-def test_product_lookup_returns_404_for_unknown_ids(api):
+def test_bb72(api):
     user_id = api.clean_user_id()
 
     response = api.get("/products/999999", user_id=user_id)
@@ -145,7 +208,7 @@ def test_product_lookup_returns_404_for_unknown_ids(api):
     assert response.json()["error"] == "Product not found"
 
 
-def test_product_search_and_category_filters_work(api):
+def test_bb73(api):
     user_id = api.clean_user_id()
 
     search_results = api.user_json("/products?search=Apple", user_id)
@@ -160,7 +223,7 @@ def test_product_search_and_category_filters_work(api):
     strict=True,
     reason="QuickCart rounds several product prices away from the seeded admin values.",
 )
-def test_product_prices_match_the_seeded_admin_data(api):
+def test_bb74(api):
     user_id = api.clean_user_id()
     listed_products = api.user_json("/products", user_id)
     admin_products = api.admin_products_by_id()
@@ -173,7 +236,7 @@ def test_product_prices_match_the_seeded_admin_data(api):
     strict=True,
     reason="QuickCart ignores the requested product price sort order.",
 )
-def test_product_sorting_respects_the_requested_price_order(api):
+def test_bb75(api):
     user_id = api.clean_user_id()
 
     ascending_prices = [

@@ -23,7 +23,7 @@ def _add_item(api, user_id: int, product_id: int, quantity: int):
     return response
 
 
-def test_cart_add_merges_quantities_for_the_same_product(api):
+def test_bb01(api):
     user_id = _user_id(api)
 
     _add_item(api, user_id, product_id=27, quantity=2)
@@ -39,7 +39,7 @@ def test_cart_add_merges_quantities_for_the_same_product(api):
     strict=True,
     reason="QuickCart currently accepts zero and negative add-to-cart quantities.",
 )
-def test_cart_rejects_non_positive_add_quantities(api):
+def test_bb02(api):
     user_id = _user_id(api)
 
     zero_quantity = api.post(
@@ -57,7 +57,7 @@ def test_cart_rejects_non_positive_add_quantities(api):
     assert negative_quantity.status_code == 400
 
 
-def test_cart_rejects_unknown_products(api):
+def test_bb03(api):
     user_id = _user_id(api)
 
     response = api.post(
@@ -70,7 +70,23 @@ def test_cart_rejects_unknown_products(api):
     assert response.json()["error"] == "Product not found"
 
 
-def test_cart_update_rejects_non_positive_quantities(api):
+@pytest.mark.xfail(
+    strict=True,
+    reason="QuickCart returns 404 Product not found when product_id is missing instead of 400 validation error.",
+)
+def test_bb04(api):
+    user_id = _user_id(api)
+
+    response = api.post(
+        "/cart/add",
+        user_id=user_id,
+        json={"quantity": 1},
+    )
+
+    assert response.status_code == 400
+
+
+def test_bb05(api):
     user_id = _user_id(api)
     _add_item(api, user_id, product_id=27, quantity=2)
 
@@ -83,7 +99,7 @@ def test_cart_update_rejects_non_positive_quantities(api):
     assert response.status_code == 400
 
 
-def test_cart_remove_rejects_missing_products(api):
+def test_bb06(api):
     user_id = _user_id(api)
     _cart(api, user_id)
 
@@ -98,7 +114,7 @@ def test_cart_remove_rejects_missing_products(api):
     assert "cart" in response.json()["error"]
 
 
-def test_cart_clear_removes_all_items(api):
+def test_bb07(api):
     user_id = _user_id(api)
     _add_item(api, user_id, product_id=27, quantity=2)
 
@@ -113,7 +129,7 @@ def test_cart_clear_removes_all_items(api):
     strict=True,
     reason="QuickCart overflows cart subtotals and drops items from the cart total.",
 )
-def test_cart_subtotals_and_total_follow_quantity_times_price(api):
+def test_bb08(api):
     user_id = _user_id(api)
     _add_item(api, user_id, product_id=1, quantity=2)
     _add_item(api, user_id, product_id=3, quantity=5)
@@ -126,7 +142,7 @@ def test_cart_subtotals_and_total_follow_quantity_times_price(api):
     assert cart["total"] == 440
 
 
-def test_coupon_apply_accepts_a_valid_fixed_coupon(api):
+def test_bb09(api):
     user_id = _user_id(api)
     _add_item(api, user_id, product_id=1, quantity=1)
 
@@ -142,7 +158,34 @@ def test_coupon_apply_accepts_a_valid_fixed_coupon(api):
     assert response.json()["new_total"] == 70
 
 
-def test_coupon_apply_rejects_carts_below_the_minimum_value(api):
+@pytest.mark.xfail(
+    strict=True,
+    reason="QuickCart applies coupon response totals but ignores the applied coupon during checkout total calculation.",
+)
+def test_bb10(api):
+    user_id = _user_id(api)
+    _add_item(api, user_id, product_id=1, quantity=1)
+
+    apply_response = api.post(
+        "/coupon/apply",
+        user_id=user_id,
+        json={"coupon_code": "WELCOME50"},
+    )
+    checkout_response = api.post(
+        "/checkout",
+        user_id=user_id,
+        json={"payment_method": "CARD"},
+    )
+
+    assert apply_response.status_code == 200
+    assert checkout_response.status_code == 200
+
+    discounted_subtotal = 120 - 50
+    expected_total = discounted_subtotal + (discounted_subtotal * 0.05)
+    assert checkout_response.json()["total_amount"] == expected_total
+
+
+def test_bb11(api):
     user_id = _user_id(api)
     _add_item(api, user_id, product_id=1, quantity=1)
 
@@ -156,7 +199,7 @@ def test_coupon_apply_rejects_carts_below_the_minimum_value(api):
     assert "below minimum" in response.json()["error"]
 
 
-def test_percent_coupons_respect_their_maximum_discount_cap(api):
+def test_bb12(api):
     user_id = _user_id(api)
     _add_item(api, user_id, product_id=1, quantity=10)
 
@@ -175,7 +218,7 @@ def test_percent_coupons_respect_their_maximum_discount_cap(api):
     strict=True,
     reason="QuickCart currently accepts expired coupons when the cart value qualifies.",
 )
-def test_expired_coupons_are_rejected(api):
+def test_bb13(api):
     user_id = _user_id(api)
     _add_item(api, user_id, product_id=1, quantity=10)
 
@@ -193,7 +236,7 @@ def test_expired_coupons_are_rejected(api):
     strict=True,
     reason="QuickCart currently allows checkout to proceed even when the cart is empty.",
 )
-def test_checkout_rejects_empty_carts(api):
+def test_bb14(api):
     user_id = _user_id(api)
 
     response = api.post(
@@ -206,7 +249,7 @@ def test_checkout_rejects_empty_carts(api):
     assert "Cart is empty" in response.json()["error"]
 
 
-def test_checkout_rejects_unknown_payment_methods(api):
+def test_bb15(api):
     user_id = _user_id(api)
     _add_item(api, user_id, product_id=1, quantity=1)
 
@@ -220,7 +263,7 @@ def test_checkout_rejects_unknown_payment_methods(api):
     assert response.json()["error"] == "Invalid payment method"
 
 
-def test_checkout_with_card_adds_gst_once_and_marks_the_order_paid(api):
+def test_bb16(api):
     user_id = _user_id(api)
     _add_item(api, user_id, product_id=1, quantity=1)
 
@@ -237,7 +280,7 @@ def test_checkout_with_card_adds_gst_once_and_marks_the_order_paid(api):
     assert response.json()["order_status"] == "PLACED"
 
 
-def test_checkout_rejects_cod_above_the_documented_limit(api):
+def test_bb17(api):
     user_id = _user_id(api)
     _add_item(api, user_id, product_id=1, quantity=50)
 
@@ -251,7 +294,7 @@ def test_checkout_rejects_cod_above_the_documented_limit(api):
     assert "COD not allowed" in response.json()["error"]
 
 
-def test_checkout_with_wallet_keeps_the_payment_pending(api):
+def test_bb18(api):
     user_id = _user_id(api)
     _add_item(api, user_id, product_id=1, quantity=1)
 

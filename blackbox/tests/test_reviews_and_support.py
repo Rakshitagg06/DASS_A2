@@ -6,7 +6,7 @@ import pytest
 PRODUCT_WITHOUT_SEEDED_REVIEWS = 250
 
 
-def test_products_without_reviews_report_zero_average(api):
+def test_bb76(api):
     user_id = api.review_user_id()
 
     response = api.get(
@@ -19,7 +19,7 @@ def test_products_without_reviews_report_zero_average(api):
     assert response.json()["reviews"] == []
 
 
-def test_review_averages_keep_decimal_precision(api):
+def test_bb77(api):
     first_user = api.review_user_id()
     second_user = api.second_review_user_id()
 
@@ -48,7 +48,7 @@ def test_review_averages_keep_decimal_precision(api):
     strict=True,
     reason="QuickCart accepts rating 0 instead of rejecting values outside 1-5.",
 )
-def test_reviews_reject_ratings_outside_the_documented_range(api):
+def test_bb78(api):
     user_id = api.review_user_id()
 
     response = api.post(
@@ -61,7 +61,7 @@ def test_reviews_reject_ratings_outside_the_documented_range(api):
     assert "between 1 and 5" in response.json()["error"]
 
 
-def test_reviews_reject_empty_comments(api):
+def test_bb79(api):
     user_id = api.review_user_id()
 
     response = api.post(
@@ -78,7 +78,7 @@ def test_reviews_reject_empty_comments(api):
     strict=True,
     reason="QuickCart truncates support-ticket messages instead of saving them exactly.",
 )
-def test_support_ticket_creation_preserves_the_full_message(api):
+def test_bb80(api):
     user_id = api.review_user_id()
     message = "Need a refund because the delivered apples were bruised."
 
@@ -98,7 +98,7 @@ def test_support_ticket_creation_preserves_the_full_message(api):
     assert saved_ticket["message"] == message
 
 
-def test_support_tickets_only_allow_forward_status_transitions(api):
+def test_bb81(api):
     user_id = api.review_user_id()
     created = api.post(
         "/support/ticket",
@@ -129,7 +129,30 @@ def test_support_tickets_only_allow_forward_status_transitions(api):
     assert "Invalid status transition" in reopened.json()["error"]
 
 
-def test_support_ticket_creation_rejects_short_subjects(api):
+@pytest.mark.xfail(
+    strict=False,
+    reason="Alternate runtime report: support tickets can incorrectly allow direct OPEN->CLOSED transition.",
+)
+def test_bb82(api):
+    user_id = api.review_user_id()
+    created = api.post(
+        "/support/ticket",
+        user_id=user_id,
+        json={"subject": "Direct close check", "message": "transition guard"},
+    )
+    ticket_id = created.json()["ticket_id"]
+
+    closed = api.put(
+        f"/support/tickets/{ticket_id}",
+        user_id=user_id,
+        json={"status": "CLOSED"},
+    )
+
+    assert closed.status_code == 400
+    assert "Invalid status transition" in closed.json()["error"]
+
+
+def test_bb83(api):
     user_id = api.review_user_id()
 
     response = api.post(
