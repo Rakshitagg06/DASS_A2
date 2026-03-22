@@ -64,6 +64,43 @@ TEST_Case_That_gave_bug:
 fun: test_creating_a_default_address_clears_the_previous_default()
 file:blackbox/tests/test_profile_addresses_products.py
 
+2). 
+#: QC-BUG-02
 
+TITLE:
+Product prices drift from seeded admin data.
 
+ENDPOINT TESTED:
+Method: GET
+URL: http://127.0.0.1:8080/api/v1/products
+
+REQUEST PAYLOAD:
+Headers:
+X-Roll-Number: 2024101087
+X-User-ID: 7
+Query Parameters: None
+Body: None
+
+Precondition Step Executed:GET /admin/products and map product IDs to admin prices.
+
+EXPECTED Result:
+HTTP Status: 200
+
+For each product in /products, price must equal /admin/products price for same product_id.
+Expected resultant JSON (shape):
+[
+  {"product_id": 8, "price": 123.45}
+]
+(Exact price must match admin dataset.)
+
+ACTUAL RESULT:
+HTTP Status: 200
+Multiple products return different prices than admin dataset (rounding/drift).
+Observed resultant JSON (example):
+[
+  {"product_id": 8, "price": 41.0},
+  {"product_id": 10, "price": 68.0}
+]
+fun: test_product_prices_match_the_seeded_admin_data()
+file: blackbox/tests/test_profile_addresses_products.py
 
