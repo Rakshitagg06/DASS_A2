@@ -418,3 +418,41 @@ Observed resultant JSON (example):
 TEST_Case_That_gave_bug:
 fun: test_orders_list_detail_and_invoice_match_a_new_checkout()
 file: blackbox/tests/test_wallet_loyalty_orders.py
+
+10). 
+#: QC-BUG-10
+
+TITLE:
+Cancelling a newly placed order can hang.
+
+ENDPOINT TESTED:
+Method: POST
+URL: http://127.0.0.1:8080/api/v1/orders/{order_id}/cancel
+
+REQUEST PAYLOAD:
+Headers:
+X-Roll-Number: 2024101087
+X-User-ID: 33
+Content-Type: application/json
+Query Parameters: None
+Body: None
+
+Precondition Step Executed:
+1. Create fresh order via POST /checkout.
+2. Immediately call cancel on that new order_id.
+
+EXPECTED RESULT:
+HTTP Status: 200
+Order should be cancelled successfully.
+
+EXPECTED JSON:
+{"order_status": "CANCELLED"}
+
+ACTUAL RESULT:
+Request may hang until client timeout (no stable response body).
+Observed resultant JSON:
+{"error": "client timeout while waiting for /orders/{order_id}/cancel response"}
+
+TEST_Case_That_gave_bug:
+fun: test_cancelling_a_new_order_restores_product_stock()
+file: blackbox/tests/test_wallet_loyalty_orders.py
