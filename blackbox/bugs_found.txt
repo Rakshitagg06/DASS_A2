@@ -634,3 +634,43 @@ Observed resultant JSON:
 TEST_Case_That_gave_bug:
 fun: test_profile_update_rejects_non_digit_phone_values()
 file: blackbox/tests/test_profile_addresses_products.py
+
+
+15). 
+#:QC-BUG-15
+TITLE: 
+/cart/add with missing product_id returns 404 instead of validation 400.
+
+ENDPOINT TESTED:
+Method: POST
+URL: http://127.0.0.1:8080/api/v1/cart/add
+ 
+REQUEST PAYLOAD:
+Headers:
+X-Roll-Number: 2024101087
+X-User-ID: 1
+Content-Type: application/json
+Query Parameters: None
+Body:
+{"quantity": 1}
+
+Expected Result:
+HTTP Status: 400
+Expected resultant JSON (shape):
+{"error": "Missing required field: product_id"}
+
+Actual Result:
+HTTP Status: 404
+Observed resultant JSON:
+{"error": "Product not found"}
+
+Fun: test_cart_add_missing_product_id_returns_a_validation_error()
+file:blackbox/tests/test_cart_coupon_checkout.py
+
+
+
+
+
+
+
+
