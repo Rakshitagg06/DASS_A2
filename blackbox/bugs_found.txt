@@ -325,3 +325,48 @@ Observed resultant JSON:
 TEST_Case_That_gave_bug:
 fun: test_checkout_rejects_empty_carts()
 file: blackbox/tests/test_cart_coupon_checkout.py
+
+8). 
+#: QC-BUG-08
+
+TITLE:
+Wallet pay does not deduct exact requested amount.
+
+ENDPOINT TESTED:
+Method: GET / POST
+URL:
+http://127.0.0.1:8080/api/v1/wallet
+http://127.0.0.1:8080/api/v1/wallet/add
+http://127.0.0.1:8080/api/v1/wallet/pay
+
+REQUEST PAYLOAD:
+Headers:
+X-Roll-Number: 2024101087
+X-User-ID: 29
+Content-Type: application/json
+Query Parameters: None
+Body (wallet/add):
+{"amount": 50}
+Body (wallet/pay):
+{"amount": 25}
+
+Precondition Step Executed:
+1. GET /wallet and capture starting balance.
+2. POST /wallet/add with amount 50.
+
+EXPECTED RESULT:
+HTTP Status: 200
+After paying 25, net change should be +25 from starting balance.
+
+EXPECTED JSON:
+{"wallet_balance": 125.0}
+
+ACTUAL RESULT:
+HTTP Status: 200
+Final balance indicates over-deduction (not exact requested amount).
+Observed resultant JSON (example):
+{"wallet_balance": 124.6}
+
+TEST_Case_That_gave_bug:
+fun: test_wallet_pay_deducts_the_exact_requested_amount()
+file: blackbox/tests/test_wallet_loyalty_orders.py
