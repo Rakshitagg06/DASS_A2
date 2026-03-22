@@ -240,3 +240,45 @@ Observed resultant JSON (example):
 TEST_Case_That_gave_bug:
 fun: test_cart_subtotals_and_total_follow_quantity_times_price()
 file: blackbox/tests/test_cart_coupon_checkout.py
+
+6). 
+#: QC-BUG-06
+
+TITLE:
+Expired coupons are accepted.
+
+ENDPOINT TESTED:
+Method: POST
+URL: http://127.0.0.1:8080/api/v1/coupon/apply
+
+REQUEST PAYLOAD:
+Headers:
+X-Roll-Number: 2024101087
+X-User-ID: 7
+Content-Type: application/json
+Query Parameters: None
+Body:
+{"coupon_code": "EXPIRED100"}
+
+Precondition Step Executed: Add cart items so minimum value condition is met.
+
+EXPECTED RESULT:
+HTTP Status: 400
+Coupon should be rejected as expired.
+
+EXPECTED JSON:
+{"error": "Coupon is expired"}
+
+ACTUAL RESULT:
+HTTP Status: 200
+Coupon is applied and discount is returned.
+Observed resultant JSON (example):
+{
+  "coupon_code": "EXPIRED100",
+  "discount": 100,
+  "new_total": 1100
+}
+
+TEST_Case_That_gave_bug:
+fun: test_expired_coupons_are_rejected()
+file: blackbox/tests/test_cart_coupon_checkout.py
