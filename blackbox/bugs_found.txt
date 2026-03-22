@@ -189,3 +189,54 @@ Observed resultant JSON:
 TEST_Case_That_gave_bug:
 fun: test_cart_rejects_non_positive_add_quantities()
 file: blackbox/tests/test_cart_coupon_checkout.py
+
+5). 
+#: QC-BUG-05
+
+TITLE:
+Cart subtotal and total computation is incorrect.
+
+ENDPOINT TESTED:
+Method: GET
+URL: http://127.0.0.1:8080/api/v1/cart
+
+REQUEST PAYLOAD:
+Headers:
+X-Roll-Number: 2024101087
+X-User-ID: 7
+Query Parameters: None
+Body: None
+
+Precondition Step Executed:
+1. DELETE /cart/clear
+2. POST /cart/add with {"product_id":1,"quantity":2}
+3. POST /cart/add with {"product_id":3,"quantity":5}
+
+EXPECTED RESULT:
+HTTP Status: 200
+subtotal = quantity * unit_price for each line item.
+total = sum(all subtotals).
+
+EXPECTED JSON:
+{
+  "items": [
+    {"product_id": 1, "subtotal": 240},
+    {"product_id": 3, "subtotal": 200}
+  ],
+  "total": 440
+}
+
+ACTUAL RESULT:
+HTTP Status: 200
+Observed resultant JSON (example):
+{
+  "items": [
+    {"product_id": 1, "quantity": 2, "unit_price": 120, "subtotal": 240},
+    {"product_id": 3, "quantity": 5, "unit_price": 40, "subtotal": -56}
+  ],
+  "total": 240
+}
+
+TEST_Case_That_gave_bug:
+fun: test_cart_subtotals_and_total_follow_quantity_times_price()
+file: blackbox/tests/test_cart_coupon_checkout.py
