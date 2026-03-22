@@ -104,3 +104,49 @@ Observed resultant JSON (example):
 fun: test_product_prices_match_the_seeded_admin_data()
 file: blackbox/tests/test_profile_addresses_products.py
 
+
+3). 
+#: QC-BUG-03
+
+TITLE:
+Product sort order is ignored.
+
+ENDPOINT TESTED:
+Method: GET
+URL: http://127.0.0.1:8080/api/v1/products
+
+REQUEST PAYLOAD:
+Headers:
+X-Roll-Number: 2024101087
+X-User-ID: 7
+Query Parameters:
+sort=asc
+sort=desc
+Body: None
+
+Precondition Step Executed: None.
+
+EXPECTED RESULT:
+HTTP Status: 200
+With sort=asc, prices must be non-decreasing.
+With sort=desc, prices must be non-increasing.
+
+EXPECTED JSON:
+[
+  {"product_id": 1, "price": 10},
+  {"product_id": 2, "price": 20}
+]
+
+ACTUAL RESULT:
+HTTP Status: 200
+Returned order does not follow requested sorting.
+Observed resultant JSON (example):
+[
+  {"product_id": 1, "price": 120},
+  {"product_id": 2, "price": 130},
+  {"product_id": 3, "price": 40}
+]
+
+TEST_Case_That_gave_bug:
+fun: test_product_sorting_respects_the_requested_price_order()
+file: blackbox/tests/test_profile_addresses_products.py
