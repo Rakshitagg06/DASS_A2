@@ -1,0 +1,69 @@
+Bugs Found 
+1). 
+#:
+QC-BUG-01
+
+TITLE:
+Multiple default addresses remain after adding a new default address.
+
+ENDPOINT TESTED:
+Method: POST
+URL: http://127.0.0.1:8080/api/v1/addresses
+
+REQUEST PAYLOAD:
+Headers:
+X-Roll-Number: 2024101087
+X-User-ID: 7
+Content-Type: application/json
+Query Parameters: None
+Body:
+{
+  "label": "OTHER",
+  "street": "98765 Default Switch Road",
+  "city": "Pune",
+  "pincode": "654321",
+  "is_default": true
+}
+
+Precondition Step Executed: GET /addresses and confirm one existing default address.
+
+EXPECTED RESULT:
+HTTP Status: 200
+Exactly one address should remain default after creation.
+
+EXPECTED JSON:
+
+{
+  "message": "Address added successfully",
+  "address": {
+    "address_id": 1001,
+    "is_default": true
+  }
+}
+Then GET /addresses should return exactly one entry with "is_default": true.
+
+ACTUAL RESULT:
+HTTP Status: 200
+New default address is created, but previous default is not cleared.
+Result: multiple addresses have "is_default": true.
+
+ACTUAL JSON :
+{
+  "message": "Address added successfully",
+  "address": {
+    "address_id": 1001,
+    "label": "OTHER",
+    "street": "98765 Default Switch Road",
+    "city": "Pune",
+    "pincode": "654321",
+    "is_default": true
+  }
+}
+
+TEST_Case_That_gave_bug:
+fun: test_creating_a_default_address_clears_the_previous_default()
+file:blackbox/tests/test_profile_addresses_products.py
+
+
+
+
