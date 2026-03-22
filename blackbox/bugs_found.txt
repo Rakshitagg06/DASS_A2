@@ -548,3 +548,52 @@ Observed resultant JSON (example):
 TEST_Case_That_gave_bug:
 fun: test_support_ticket_creation_preserves_the_full_message()
 file: blackbox/tests/test_reviews_and_support.py
+
+13). 
+#: QC-BUG-13
+
+TITLE:
+Applied coupon discount is ignored during checkout total calculation.
+
+ENDPOINT TESTED:
+Method: POST
+URL:
+http://127.0.0.1:8080/api/v1/coupon/apply
+http://127.0.0.1:8080/api/v1/checkout
+
+REQUEST PAYLOAD:
+Headers:
+X-Roll-Number: 2024101087
+X-User-ID: 7
+Content-Type: application/json
+Query Parameters: None
+Body (coupon/apply):
+{"coupon_code": "WELCOME50"}
+Body (checkout):
+{"payment_method": "CARD"}
+
+Precondition Step Executed:
+1. DELETE /cart/clear
+2. POST /cart/add with {"product_id":1,"quantity":1} (subtotal 120)
+3. Apply coupon WELCOME50
+
+EXPECTED RESULT:
+POST /coupon/apply status: 200
+POST /checkout status: 200
+Checkout should use discounted subtotal.
+
+EXPECTED JSON (checkout example):
+{
+  "gst_amount": 3.5,
+  "total_amount": 73.5
+}
+
+ACTUAL RESULT:
+POST /coupon/apply status: 200, discount reported.
+POST /checkout status: 200, but total is charged as if no coupon applied.
+Observed checkout JSON:
+{"gst_amount": 6, "total_amount": 126}
+
+TEST_Case_That_gave_bug:
+fun: test_checkout_total_reflects_an_applied_coupon()
+file: blackbox/tests/test_cart_coupon_checkout.py
