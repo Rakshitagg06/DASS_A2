@@ -499,3 +499,52 @@ Observed resultant JSON (example):
 TEST_Case_That_gave_bug:
 fun: test_reviews_reject_ratings_outside_the_documented_range()
 file: blackbox/tests/test_reviews_and_support.py
+
+12). 
+#: QC-BUG-12
+
+TITLE:
+Support ticket message is truncated.
+
+ENDPOINT TESTED:
+Method: POST
+URL: http://127.0.0.1:8080/api/v1/support/ticket
+
+REQUEST PAYLOAD:
+Headers:
+X-Roll-Number: 2024101087
+X-User-ID: 29
+Content-Type: application/json
+Query Parameters: None
+Body:
+{
+  "subject": "Refund help",
+  "message": "Need a refund because the delivered apples were bruised."
+}
+
+Precondition Step Executed: None.
+
+EXPECTED RESULT:
+HTTP Status: 200
+Full message should be persisted exactly.
+
+EXPECTED JSON:
+{
+  "ticket_id": 151,
+  "status": "OPEN",
+  "message": "Need a refund because the delivered apples were bruised."
+}
+
+ACTUAL RESULT:
+HTTP Status: 200
+Stored message is truncated in persisted ticket data.
+Observed resultant JSON (example):
+{
+  "ticket_id": 151,
+  "status": "OPEN",
+  "message": "Need a refund because the delivered apples"
+}
+
+TEST_Case_That_gave_bug:
+fun: test_support_ticket_creation_preserves_the_full_message()
+file: blackbox/tests/test_reviews_and_support.py
