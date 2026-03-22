@@ -282,3 +282,46 @@ Observed resultant JSON (example):
 TEST_Case_That_gave_bug:
 fun: test_expired_coupons_are_rejected()
 file: blackbox/tests/test_cart_coupon_checkout.py
+
+7). 
+#: QC-BUG-07
+
+TITLE:
+Checkout succeeds with empty cart.
+
+ENDPOINT TESTED:
+Method: POST
+URL: http://127.0.0.1:8080/api/v1/checkout
+
+REQUEST PAYLOAD:
+Headers:
+X-Roll-Number: 2024101087
+X-User-ID: 7
+Content-Type: application/json
+Query Parameters: None
+Body:
+{"payment_method": "CARD"}
+
+Precondition Step Executed: DELETE /cart/clear
+
+EXPECTED RESULT:
+HTTP Status: 400
+Checkout must reject empty cart.
+
+EXPECTED JSON:
+{"error": "Cart is empty"}
+
+ACTUAL RESULT:
+HTTP Status: 200
+Observed resultant JSON:
+{
+  "order_id": 3001,
+  "order_status": "PLACED",
+  "payment_status": "PAID",
+  "gst_amount": 0,
+  "total_amount": 0
+}
+
+TEST_Case_That_gave_bug:
+fun: test_checkout_rejects_empty_carts()
+file: blackbox/tests/test_cart_coupon_checkout.py
