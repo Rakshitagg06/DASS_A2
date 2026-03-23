@@ -1,76 +1,144 @@
 # DASS_A2
 
-Part 1 of the assignment is implemented around the MoneyPoly codebase in
-`moneypoly/moneypoly`, with white-box tests and diagram assets under `whitebox/`.
+This repository contains all three assignment parts:
 
-Part 2 is implemented under `integration/` as a command-line StreetRace Manager
-system with the required six modules plus two additional relevant modules:
-`Scheduling` and `Maintenance`.
+- **Part 1 (White-box):** MoneyPoly + white-box tests
+- **Part 2 (Integration):** StreetRace Manager modules + integration tests
+- **Part 3 (Black-box):** QuickCart API black-box suite
 
-Part 3 is implemented under `blackbox/` as a QuickCart REST API black-box test
-suite using `pytest` and `requests`.
+Repository: https://github.com/Rakshitagg06/DASS_A2.git
+Drive Folder: https://drive.google.com/drive/u/0/folders/1r6a0YkK4I33zfrAlOja2Ykzmk5FhLwlx
 
-## Repository Link
+---
 
-`https://github.com/Rakshitagg06/DASS_A2.git`
+## 1) Setup
 
-## How To Run MoneyPoly
+From repository root:
 
 ```bash
-cd moneypoly/moneypoly
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -U pip pytest requests pylint reportlab
+```
+
+---
+
+## 2) Directory Structure (By Part)
+
+### Part 1 — White-box (MoneyPoly)
+
+```text
+moneypoly/
+  main.py
+  moneypoly/
+    bank.py
+    board.py
+    cards.py
+    config.py
+    dice.py
+    game.py
+    player.py
+    property.py
+    ui.py
+
+whitebox/
+  diagrams/
+    moneypoly_control_flow.mmd
+  tests/
+    test_*.py
+```
+
+### Part 2 — Integration (StreetRace Manager)
+
+```text
+integration/
+  code/
+    main.py
+    streetrace_manager/
+      cli.py
+      crew_management.py
+      inventory.py
+      maintenance.py
+      mission_planning.py
+      models.py
+      race_management.py
+      registration.py
+      results.py
+      scheduling.py
+  diagrams/
+    streetrace_call_graph.mmd
+  tests/
+    test_*.py
+```
+
+### Part 3 — Black-box (QuickCart)
+
+```text
+blackbox/
+  tests/
+    test_*.py
+  report.md
+  bugs_found.txt
+```
+
+---
+
+## 3) Run Commands (Each Part)
+
+### Part 1 (MoneyPoly app)
+
+```bash
+cd moneypoly
 python main.py
 ```
 
-## How To Run StreetRace Manager
+### Part 1 tests (white-box)
+
+From repository root:
+
+```bash
+python -m pytest -q whitebox/tests
+```
+
+### Part 1 pylint
+
+```bash
+cd moneypoly
+python -m pylint main.py moneypoly
+```
+
+### Part 2 (StreetRace Manager app)
 
 ```bash
 cd integration/code
 python main.py
 ```
 
-## How To Run The Tests
+### Part 2 tests (integration folder)
 
-From the repository root:
-
-```bash
-python -m pytest
-```
-
-## How To Run Part 3 Black-Box Tests
-
-From the repository root:
+From repository root:
 
 ```bash
-python -m pytest blackbox/tests
+python -m pytest -q integration/tests
 ```
 
-The Part 3 pytest fixture launches QuickCart automatically from the provided
-`quickcart_image_x86/` OCI image contents, so Docker is not required for the
-automated black-box suite.
+### Part 3 tests (QuickCart black-box)
 
-## Part 2 Layout
-
-```text
-integration/
-  code/
-  diagrams/
-  tests/
-```
-
-The Part 2 Mermaid call graph source is stored in
-`integration/diagrams/streetrace_call_graph.mmd`.
-
-## Part 3 Layout
-
-```text
-blackbox/
-  tests/
-  report.md
-```
-
-## How To Run pylint For Part 1
+From repository root:
 
 ```bash
-cd moneypoly/moneypoly
-python -m pylint main.py moneypoly
+python -m pytest -q blackbox/tests
+```
+
+Note: Part 3 fixture starts QuickCart from `quickcart_image_x86/` automatically.
+Docker is not required for normal black-box test execution in this project setup.
+
+---
+
+## 4) Run All Tests
+
+From repository root:
+
+```bash
+python -m pytest -q
 ```
